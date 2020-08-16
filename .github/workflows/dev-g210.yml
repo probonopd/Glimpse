@@ -94,117 +94,22 @@ jobs:
         ./autogen.sh --prefix=$INSTALL_PREFIX --disable-gtk-doc --disable-gtk-doc-html --without-webkit --without-xvfb-run --disable-python --disable-check-update
         make && make install
         
-    - name: Run unit tests against Glimpse Image Editor
+    - name: AppImage
       run: |
-        cd $SRC_PREFIX/Glimpse
-        make check
-    
-    - uses: actions/upload-artifact@v1
+        mkdir -p appdir ; cp -r "$INSTALL_PREFIX" appdir/usr
+        wget -c https://github.com/$(wget -q https://github.com/probonopd/go-appimage/releases -O - | grep "appimagetool-.*-x86_64.AppImage" | head -n 1 | cut -d '"' -f 2)
+        chmod +x appimagetool-*.AppImage
+        ./appimagetool-*.AppImage -s deploy appdir/usr/share/applications/*.desktop --appimage-extract-and-run # Bundle EVERYTHING
+        # sed -i -e 's|/usr||g' appdir/lib/x86_64-linux-gnu/gdk-pixbuf-2.0/2.10.0/loaders.cache # FIXME in https://github.com/probonopd/go-appimage
+        ./appimagetool-*.AppImage appdir --appimage-extract-and-run # turn AppDir into AppImage
+  
+    - name: Release AppImage
+      uses: marvinpinto/action-automatic-releases@latest
       with:
-        name: glimpse-dev-x86_64-linux-gnu-${{ github.sha }}
-        path: ${{ github.workspace }}/glimpse-prefix
-
-  build-linux-flatpak-dev:
-    runs-on: ubuntu-20.04
-          
-    steps:
-    - uses: actions/checkout@v2
-      with:
-        path: Glimpse
-      
-    - name: Install Flatpak and flatpak-builder
-      run: sudo apt-get --quiet install --yes flatpak flatpak-builder
-
-    - name: Add the Flathub repository
-      run: sudo flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-
-    - name: Install GNOME 3.36 SDK
-      run: sudo flatpak install -y flathub org.gnome.Platform//3.36 org.gnome.Sdk//3.36
-
-    - name: Initialize git submodules
-      run: |
-        cd ${{ github.workspace }}/Glimpse
-        git submodule update --init
-
-    - name: Build development snapshot and package as Flatpak
-      run: |
-        cd ${{ github.workspace }}/Glimpse
-        flatpak-builder --repo=${{ github.workspace }}/repo --force-clean --ccache ${{ github.workspace }}/_build build-aux/flatpak/org.glimpse_editor.Glimpse.json
-
-    - name: Export Flatpak as single file bundle
-      run: |
-        flatpak build-bundle ${{ github.workspace }}/repo glimpse-dev.flatpak org.glimpse_editor.Glimpse
-    
-    - uses: actions/upload-artifact@v1
-      with:
-        name: glimpse-dev.flatpak-${{ github.sha }}
-        path: ${{ github.workspace }}/glimpse-dev.flatpak
-
-  build-windows-x64-dev:
-    runs-on: windows-latest
-    defaults:
-      run:
-        shell: msys2 {0}
-    steps:
-    - uses: actions/checkout@v2
-      with:
-        path: Glimpse
-        
-    - uses: msys2/setup-msys2@v1
-      with:
-        msystem: MINGW64
-        update: true
-        install: git mingw-w64-x86_64-toolchain base-devel mingw-w64-x86_64-asciidoc mingw-w64-x86_64-drmingw mingw-w64-x86_64-gexiv2 mingw-w64-x86_64-ghostscript mingw-w64-x86_64-glib-networking mingw-w64-x86_64-graphviz mingw-w64-x86_64-gtk2 mingw-w64-x86_64-python2-pygtk mingw-w64-x86_64-iso-codes mingw-w64-x86_64-json-c mingw-w64-x86_64-json-glib mingw-w64-x86_64-lcms2 mingw-w64-x86_64-lensfun mingw-w64-x86_64-libheif mingw-w64-x86_64-libraw mingw-w64-x86_64-libspiro mingw-w64-x86_64-libwebp mingw-w64-x86_64-libwmf mingw-w64-x86_64-openexr mingw-w64-x86_64-poppler mingw-w64-x86_64-SDL2 mingw-w64-x86_64-suitesparse mingw-w64-x86_64-vala mingw-w64-x86_64-xpm-nox mingw-w64-x86_64-gtk-doc mingw-w64-x86_64-meson mingw-w64-x86_64-gobject-introspection mingw-w64-x86_64-babl mingw-w64-x86_64-libmypaint mingw-w64-x86_64-mypaint-brushes mingw-w64-x86_64-gegl
-
-    - name: Build in-development version of Glimpse Image Editor
-      run: |
-        export INSTALL_PREFIX="`pwd`/glimpse-win-prefix"
-        export PATH="$INSTALL_PREFIX/bin:$PATH"
-        export PKG_CONFIG_PATH="$INSTALL_PREFIX/lib/pkgconfig:$INSTALL_PREFIX/share/pkgconfig:$PKG_CONFIG_PATH"
-        export LD_LIBRARY_PATH="$INSTALL_PREFIX/lib:$LD_LIBRARY_PATH"
-        export XDG_DATA_DIRS="$XDG_DATA_DIRS:$INSTALL_PREFIX/share:/usr/local/share/:/usr/share/"
-        export ACLOCAL_FLAGS="-I/c/msys64/mingw64/share/aclocal"
-        echo "== Building Glimpse DEV... =="
-        cd Glimpse
-        ./autogen.sh --prefix=$INSTALL_PREFIX --disable-gtk-doc --disable-gtk-doc-html --without-webkit --without-xvfb-run --disable-python --disable-check-update
-        make && make install
-    
-    - uses: actions/upload-artifact@v1
-      with:
-        name: glimpse-dev-x86_64-windows-${{ github.sha }}
-        path: ${{ github.workspace }}/glimpse-win-prefix
-
-  build-windows-x86-dev:
-    runs-on: windows-latest
-    defaults:
-      run:
-        shell: msys2 {0}
-    steps:
-    - uses: actions/checkout@v2
-      with:
-        path: Glimpse
-        
-    - uses: msys2/setup-msys2@v1
-      with:
-        msystem: MINGW32
-        update: true
-        install: git mingw-w64-i686-toolchain base-devel mingw-w64-i686-asciidoc mingw-w64-i686-drmingw mingw-w64-i686-gexiv2 mingw-w64-i686-ghostscript mingw-w64-i686-glib-networking mingw-w64-i686-graphviz mingw-w64-i686-gtk2 mingw-w64-i686-python2-pygtk mingw-w64-i686-iso-codes mingw-w64-i686-json-c mingw-w64-i686-json-glib mingw-w64-i686-lcms2 mingw-w64-i686-lensfun mingw-w64-i686-libheif mingw-w64-i686-libraw mingw-w64-i686-libspiro mingw-w64-i686-libwebp mingw-w64-i686-libwmf mingw-w64-i686-openexr mingw-w64-i686-poppler mingw-w64-i686-SDL2 mingw-w64-i686-suitesparse mingw-w64-i686-vala mingw-w64-i686-xpm-nox mingw-w64-i686-gtk-doc mingw-w64-i686-meson mingw-w64-i686-gobject-introspection mingw-w64-i686-babl mingw-w64-i686-libmypaint mingw-w64-i686-mypaint-brushes mingw-w64-i686-gegl
-
-    - name: Build in-development version of Glimpse Image Editor
-      run: |
-        export INSTALL_PREFIX="`pwd`/glimpse-win-prefix"
-        export PATH="$INSTALL_PREFIX/bin:$PATH"
-        export PKG_CONFIG_PATH="$INSTALL_PREFIX/lib/pkgconfig:$INSTALL_PREFIX/share/pkgconfig:$PKG_CONFIG_PATH"
-        export LD_LIBRARY_PATH="$INSTALL_PREFIX/lib:$LD_LIBRARY_PATH"
-        export XDG_DATA_DIRS="$XDG_DATA_DIRS:$INSTALL_PREFIX/share:/usr/local/share/:/usr/share/"
-        export ACLOCAL_FLAGS="-I/c/msys64/mingw64/share/aclocal"
-        echo "== Building Glimpse DEV... =="
-        cd Glimpse
-        ./autogen.sh --prefix=$INSTALL_PREFIX --disable-gtk-doc --disable-gtk-doc-html --without-webkit --without-xvfb-run --disable-python --disable-check-update
-        make && make install
-    
-    - uses: actions/upload-artifact@v1
-      with:
-        name: glimpse-dev-i686-windows-${{ github.sha }}
-        path: ${{ github.workspace }}/glimpse-win-prefix
-    
+        title: AppImage
+        automatic_release_tag: continuous
+        prerelease: true
+        draft: false
+        files: |
+          Glimpse*.AppImage*
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
