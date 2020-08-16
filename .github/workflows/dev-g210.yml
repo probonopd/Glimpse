@@ -96,6 +96,7 @@ jobs:
         
     - name: Create AppImage
       run: |
+        unset ARCH
         mkdir -p appdir ; cp -r "$INSTALL_PREFIX" appdir/usr
         find appdir -name "glimpse-data-extras.metainfo.xml" -delete
         wget -c https://github.com/$(wget -q https://github.com/probonopd/go-appimage/releases -O - | grep "appimagetool-.*-x86_64.AppImage" | head -n 1 | cut -d '"' -f 2)
