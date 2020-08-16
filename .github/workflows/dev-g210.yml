@@ -98,6 +98,8 @@ jobs:
       run: |
         unset ARCH
         mkdir -p appdir ; cp -r "$INSTALL_PREFIX" appdir/usr
+        wget -c "https://raw.githubusercontent.com/aferrero2707/gimp-appimage/517c4b1c81b0b655bb72c985fcf0a308fe3b9641/appimage-helper-scripts/bundle-python.sh"
+        APPDIR=$(readlink -f ./appdir) bash -ex bundle-python.sh
         find appdir -name "glimpse-data-extras.metainfo.xml" -delete
         wget -c https://github.com/$(wget -q https://github.com/probonopd/go-appimage/releases -O - | grep "appimagetool-.*-x86_64.AppImage" | head -n 1 | cut -d '"' -f 2)
         chmod +x appimagetool-*.AppImage
