@@ -100,7 +100,7 @@ jobs:
         wget -c https://github.com/$(wget -q https://github.com/probonopd/go-appimage/releases -O - | grep "appimagetool-.*-x86_64.AppImage" | head -n 1 | cut -d '"' -f 2)
         chmod +x appimagetool-*.AppImage
         ./appimagetool-*.AppImage -s deploy appdir/usr/share/applications/*.desktop --appimage-extract-and-run # Bundle EVERYTHING
-        # sed -i -e 's|/usr||g' appdir/lib/x86_64-linux-gnu/gdk-pixbuf-2.0/2.10.0/loaders.cache # FIXME in https://github.com/probonopd/go-appimage
+        sed -i -e 's|/usr||g' appdir/lib/x86_64-linux-gnu/gdk-pixbuf-2.0/2.10.0/loaders.cache # https://github.com/probonopd/go-appimage/issues/56
         ./appimagetool-*.AppImage appdir --appimage-extract-and-run # turn AppDir into AppImage
   
     - name: Release AppImage
