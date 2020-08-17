@@ -22,7 +22,7 @@ jobs:
         sudo apt-get --quiet update --yes
             
     - name: Install build tools
-      run: sudo apt-get --quiet install --yes build-essential git python3 python3-pip python3-setuptools python3-wheel ninja-build libgirepository1.0-dev valac libasound2-plugins appstream
+      run: sudo apt-get --quiet install --yes build-essential git python3 python3-pip python3-setuptools python3-wheel ninja-build libgirepository1.0-dev valac libasound2-plugins appstream gnome-themes-extra-data
 
     - name: Install build dependencies
       run: sudo apt-get --quiet build-dep gimp
@@ -98,13 +98,16 @@ jobs:
       run: |
         unset ARCH
         mkdir -p appdir ; cp -r "$INSTALL_PREFIX" appdir/usr
-        wget -c "https://raw.githubusercontent.com/aferrero2707/gimp-appimage/517c4b1c81b0b655bb72c985fcf0a308fe3b9641/appimage-helper-scripts/bundle-python.sh"
-        APPDIR=$(readlink -f ./appdir) bash -ex bundle-python.sh
+        # wget -c "https://raw.githubusercontent.com/aferrero2707/gimp-appimage/517c4b1c81b0b655bb72c985fcf0a308fe3b9641/appimage-helper-scripts/bundle-python.sh"
+        # APPDIR=$(readlink -f ./appdir) bash -ex bundle-python.sh
+        mkdir -p appdir/usr/share/themes ; cp -r /usr/share/themes/Adwaita appdir/usr/share/themes/ # Bundle Adwaita theme
+        rm -rf appdir/usr/share/themes/Adwaita/gtk-3.0 # Bundle Adwaita theme
         find appdir -name "glimpse-data-extras.metainfo.xml" -delete
         wget -c https://github.com/$(wget -q https://github.com/probonopd/go-appimage/releases -O - | grep "appimagetool-.*-x86_64.AppImage" | head -n 1 | cut -d '"' -f 2)
         chmod +x appimagetool-*.AppImage
         ./appimagetool-*.AppImage -s deploy appdir/usr/share/applications/*.desktop --appimage-extract-and-run # Bundle EVERYTHING
         sed -i -e 's|/usr||g' appdir/lib/x86_64-linux-gnu/gdk-pixbuf-2.0/2.10.0/loaders.cache # https://github.com/probonopd/go-appimage/issues/56
+        sed -i -e 's|Default|Adwaita|g' appdir/AppRun # Use Adwaita theme
         VERSION="${GITHUB_RUN_NUMBER}".git-"${GITHUB_SHA:0:7}" ./appimagetool-*.AppImage appdir --appimage-extract-and-run # turn AppDir into AppImage
   
     - name: Release AppImage
