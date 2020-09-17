@@ -5,7 +5,7 @@ _Name=Glimpse Image Editor
 _GenericName=Image Editor
 _Comment=Create and edit images
 # Translators: Search terms to find this application. Do NOT translate or localize the semicolons! The list MUST also end with a semicolon!
-_Keywords=graphic;design;illustration;painting;photography;gimp
+_Keywords=graphic;design;illustration;painting;photography;gimp;
 Exec=@GLIMPSE_COMMAND@ %U
 TryExec=glimpse-@GLIMPSE_APP_VERSION@
 Icon=org.glimpse_editor.Glimpse
